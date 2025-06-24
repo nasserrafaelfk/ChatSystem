@@ -1,0 +1,9 @@
+services:
+  jmeter:
+    image: justb4/jmeter:latest
+    volumes:
+      - ./tests:/tests # Monta o diretório local com os planos de teste e resultados
+    ports:
+      - "8080:8080" # Porta para expor logs ou relatórios, se necessário
+    command: >
+      -n -t /tests/test-plan.jmx -l /tests/results.jtl

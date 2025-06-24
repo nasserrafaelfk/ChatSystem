@@ -1,0 +1,114 @@
+networks:
+  monitor-net:
+    driver: bridge
+
+volumes:
+  mongo-data: {}
+  grafana_data: {}
+  prometheus_data: {}
+
+services:
+  mongodb:
+    image: mongo:latest
+    restart: unless-stopped
+    networks:
+      - monitor-net
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  user-service:
+    build: ./user-service
+    environment:
+      - SERVICE_NAME=user-service
+      - NODE_ENV=production
+    networks:
+      - monitor-net
+    ports:
+      - "8081:8081"
+    depends_on:
+      - "mongodb"
+
+  chat-service:
+    build: ./chat-service
+    environment:
+      - SERVICE_NAME=chat-service
+      - NODE_ENV=production
+    networks:
+      - monitor-net
+    ports:
+      - "8082:8082"
+    depends_on:
+      - "mongodb"
+
+  notification-service:
+    build: ./notification-service
+    environment:
+      - SERVICE_NAME=notification-service
+      - NODE_ENV=production
+    networks:
+      - monitor-net
+    ports:
+      - "8083:8083"
+    depends_on:
+      - "mongodb"
+
+  gateway:
+    build: ./gateway
+    networks:
+      - monitor-net
+    environment:
+      - SERVICE_NAME=gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - "mongodb"
+      - user-service
+      - chat-service
+      - notification-service
+
+  chat-web-app:
+    build:
+      context: ./chat-web-app
+      dockerfile: Dockerfile
+    image: frontend:latest
+    ports:
+      - "85:85"
+    networks:
+      - monitor-net
+    depends_on:
+      - gateway
+
+  # Monitoramento
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--web.enable-lifecycle"
+    networks:
+      - monitor-net
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=senha_segura
+    networks:
+      - monitor-net
+    ports:
+      - "3000:3000"
+
+  node-exporter:
+    image: prom/node-exporter
+    networks:
+      - monitor-net
+    ports:
+      - "9100:9100"

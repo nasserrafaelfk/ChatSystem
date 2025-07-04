@@ -69,7 +69,13 @@ O API Gateway é responsável por encaminhar as solicitações dos usuários par
 
     - Use o [MongoDB Atlas](https://www.mongodb.com/products/platform/atlas-database) para configurar um cluster gratuito.
 
-    - Copie a URI de conexão fornecida pelo Atlas e configure no `.env` de cada microsserviço:
+    - Configure o seu cluster e insira o seguinte IP na lista de permissões de rede para poder acessar o banco usando qualquer conexão:
+
+    ```bash
+    0.0.0.0/0
+    ```
+
+    - Clique em "Conectar", selecione "Drivers" e copie a URI de conexão fornecida pelo Atlas e configure no `.env` de cada microsserviço. Lembre-se de trocar o username e password para os que você usou ao configurar o seu banco:
 
     ```bash
     MONGO_URI=mongodb+srv://<username>:<password>@cluster0.mongodb.net/chat-app?retryWrites=true&w=majority
